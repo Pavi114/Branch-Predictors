@@ -72,5 +72,27 @@ class TwoBitPredictor(Predictor):
 
 
 class CorrelatingPredictor(Predictor):
-    def __init__(self, m, n):
+    def __init__(self, m, n, ls_bits):
         super.__init__()
+        self.m = m
+        self.n = n
+        self.max_val = pow(2, n)
+        self.global_branch_history = 0 #m-bit register
+        self.global_history_table = [0 for i in pow(2, self.m)] # n bit each in 2^m entries
+
+    def predict(self, target_address):
+        lsb = target_address[:-self.m]
+        index = lsb ^ self.global_branch_history
+        if self.global_history_table[index] >= self.max_val / 2:
+           return TAKEN
+        return NOT_TAKEN
+    
+    def update_bht(self, target_address, actual_outcome):
+        lsb = target_address[:-self.m]
+        index = lsb ^ self.global_branch_history
+        if actual_outcome == TAKEN and self.global_history_table[index] < self.max_val - 1:
+            self.global_history_table[index] += 1
+        elif actual_outcome == NOT_TAKEN and self.global_history_table[index] > 0:
+            self.global_history_table[index] -= 1
+        self.global_branch_history = (self.global_branch_history << 1) | actual_outcome
+
