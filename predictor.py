@@ -14,10 +14,16 @@ class Predictor(object):
     
     def increment_right_predictions(self):
         self.right_predictions += 1
+    
+    def update_predictions(self, expected_outcome, actual_outcome):
+        if expected_outcome != actual_outcome:
+            self.increment_misprediction()
+        else:
+            self.increment_right_predictions()
 
 class BranchTaken(Predictor):
     def __init__(self):
-        super.__init__()
+        super(BranchTaken, self).__init__()
         self.outcome = TAKEN
     
     def predict(self, target_address):
@@ -25,7 +31,7 @@ class BranchTaken(Predictor):
 
 class BranchNotTaken(Predictor):
     def __init__(self):
-        super.__init__()
+        super(BranchNotTaken, self).__init__()
         self.outcome = NOT_TAKEN
     
     def predict(self, target_address):
@@ -33,7 +39,7 @@ class BranchNotTaken(Predictor):
 
 class OneBitPredictor(Predictor):
     def __init__(self, ls_bits):
-        super.__init__()
+        super(OneBitPredictor, self).__init__()
         self.ls_bit_size = ls_bits
         self.branch_history_table_size = 2**ls_bits
         self.branch_history_table = [0 for i in self.branch_history_table_size]
@@ -50,6 +56,7 @@ class OneBitPredictor(Predictor):
 
 class TwoBitPredictor(Predictor):
     def __init__(self, ls_bits):
+       super(TwoBitPredictor, self).__init__()
        self.ls_bit_size = ls_bits
        self.branch_history_table_size = 2**ls_bits
        self.branch_history_table = [0 for i in self.branch_history_table_size] 
@@ -71,9 +78,9 @@ class TwoBitPredictor(Predictor):
             self.branch_history_table[lsb] = (self.branch_history_table[lsb] - 1) % 4
 
 
-class CorrelatingPredictor(Predictor):
+class GSharePredictor(Predictor):
     def __init__(self, m, n, ls_bits):
-        super.__init__()
+        super(GSharePredictor, self).__init__()
         self.m = m
         self.n = n
         self.max_val = pow(2, n)
@@ -95,4 +102,3 @@ class CorrelatingPredictor(Predictor):
         elif actual_outcome == NOT_TAKEN and self.global_history_table[index] > 0:
             self.global_history_table[index] -= 1
         self.global_branch_history = (self.global_branch_history << 1) | actual_outcome
-
