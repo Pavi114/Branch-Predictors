@@ -28,6 +28,7 @@ class Predictor(object):
         s = '\tNumber of Mispredictions: {}\n'.format(self.mispredictions)
         s += '\tNumber of Correct Predictions: {}\n'.format(self.right_predictions)
         s += '\tAccuracy: {}%\n'.format(round(self.accuracy, 2))
+        s += '\tMisprediction Rate: {}%\n'.format(round(100 - round(self.accuracy, 2), 2))
         return s
 
 class BranchTaken(Predictor):
@@ -59,6 +60,8 @@ class BranchNotTaken(Predictor):
 class OneBitPredictor(Predictor):
     def __init__(self, ls_bits):
         super(OneBitPredictor, self).__init__()
+        self.n = ls_bits
+
         self.lsb = pow(2, ls_bits) - 1
 
         self.branch_history_table_size = 2**ls_bits
@@ -75,17 +78,21 @@ class OneBitPredictor(Predictor):
         self.branch_history_table[index] = actual_outcome
     
     def print_performance_analysis(self):
-        s = 'Dynamic Branch Prediction: One level predictor using one bit\n'
+        s = 'Dynamic Branch Prediction: One level bimodal predictor using one bit\n'
+        s += '\tCounter Bits (n) = {}\n'.format(self.n)
+        s += '\tTotal Size = {} bits\n'.format(2**(self.n))
         s += Predictor.print_performance_analysis(self)
         print(s)
 
 class TwoBitPredictor(Predictor):
     def __init__(self, ls_bits):
-       super(TwoBitPredictor, self).__init__()
-       self.lsb = pow(2, ls_bits) - 1
+        super(TwoBitPredictor, self).__init__()
+        self.n = ls_bits
 
-       self.branch_history_table_size = 2**ls_bits
-       self.branch_history_table = [0 for i in range(self.branch_history_table_size)] 
+        self.lsb = pow(2, ls_bits) - 1
+
+        self.branch_history_table_size = 2**ls_bits
+        self.branch_history_table = [0 for i in range(self.branch_history_table_size)] 
     
     def predict(self, target_address):
         index = target_address & self.lsb
@@ -106,8 +113,9 @@ class TwoBitPredictor(Predictor):
             self.branch_history_table[index] -= 1
     
     def print_performance_analysis(self):
-        s = 'Dynamic Branch Prediction: Two Bit\n'
-        s += 'Branch History Table size: {}\n'.format(self.branch_history_table_size)
+        s = 'Dynamic Branch Prediction: One level bimodal predictor using two bits\n'
+        s += '\tCounter Bits (n) = {}\n'.format(self.n)
+        s += '\tTotal Size = {} bits\n'.format(2 * 2**(self.n))
         s += Predictor.print_performance_analysis(self)
         print(s)
 
@@ -115,6 +123,9 @@ class TwoBitPredictor(Predictor):
 class CorrelationPredictor(Predictor):
     def __init__(self, m, n):
         super(CorrelationPredictor, self).__init__()
+        self.m = m
+        self.n = n
+
         self.history_length = m
         self.num_counters = n
 
@@ -155,6 +166,8 @@ class CorrelationPredictor(Predictor):
     
     def print_performance_analysis(self):
         s = 'Dynamic Branch Prediction: Two Level Correlation Predictor\n'
+        s += '\tHistory Bits (m) = {}, Counter Bits (n) = {}\n'.format(self.m, self.n)
+        s += '\tTotal Size = {} bits\n'.format(2 * 2**(self.m + self.n))
         s += Predictor.print_performance_analysis(self)
         print(s)
     
@@ -162,6 +175,9 @@ class CorrelationPredictor(Predictor):
 class GSharePredictor(Predictor):
     def __init__(self, m, n):
         super(GSharePredictor, self).__init__()
+        self.m = m
+        self.n = n
+
         self.history_length = m
         self.num_counters = n
         self.global_branch_history = 0 # m-bit register
@@ -209,13 +225,18 @@ class GSharePredictor(Predictor):
     
     def print_performance_analysis(self):
         s = 'Dynamic Branch Prediction: Two Level Correlating Predictor (GShare)\n'
+        s += '\tHistory Bits (m) = {}, Counter Bits (n) = {}\n'.format(self.m, self.n)
+        s += '\tTotal Size = {} bits\n'.format(2 * 2**self.n)
         s += Predictor.print_performance_analysis(self)
         print(s)
     
 class TournamentPredictor(Predictor):
     def __init__(self, m, n, ls_bits):
         super(TournamentPredictor, self).__init__()
+        self.m = m
+        self.n = n
         self.ls_bits = ls_bits
+
         self.lsb = 2**ls_bits - 1
         self.gshare = GSharePredictor(m, n)
         self.two_bit = TwoBitPredictor(n)
@@ -245,5 +266,7 @@ class TournamentPredictor(Predictor):
 
     def print_performance_analysis(self):
         s = 'Dynamic Branch Prediction: Tournament Predictor\n'
+        s += '\tHistory Bits (m) = {}, Counter Bits (n) = {}, Tournament Bits (t) = {}\n'.format(self.m, self.n, self.ls_bits)
+        s += '\tTotal Size = {} bits\n'.format(2 * 2**self.ls_bits + 4 * 2**self.n)
         s += Predictor.print_performance_analysis(self)
         print(s)

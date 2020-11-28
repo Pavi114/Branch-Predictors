@@ -4,11 +4,11 @@ from helpers import start_prediction
 predictor_types = {
     'BranchTaken': BranchTaken(),
     'BranchNotTaken': BranchNotTaken(), 
-    'OneBitPredictor': OneBitPredictor(ls_bits=13), 
-    'TwoBitPredictor': TwoBitPredictor(ls_bits=12), 
-    'CorrelationPredictor': CorrelationPredictor(m=6, n=6),
-    'GSharePredictor': GSharePredictor(m=12, n=12),
-    'TournamentPredictor': TournamentPredictor(m=4, n=10, ls_bits=11)
+    'OneBitPredictor': OneBitPredictor(ls_bits=14), 
+    'TwoBitPredictor': TwoBitPredictor(ls_bits=13), 
+    'CorrelationPredictor': CorrelationPredictor(m=6, n=7),
+    'GSharePredictor': GSharePredictor(m=13, n=13),
+    'TournamentPredictor': TournamentPredictor(m=11, n=11, ls_bits=12)
 }
 
 for predictor_type, predictor in predictor_types.items():
