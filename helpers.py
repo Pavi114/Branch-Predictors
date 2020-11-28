@@ -8,8 +8,6 @@ def start_prediction(file_object, predictor):
     while True:
         x = file_object.readline()
         x = x.rstrip()
-        # if i > 200:
-        #     break
         if not x:
             break
         i = i + 1
@@ -17,7 +15,6 @@ def start_prediction(file_object, predictor):
         (target_address, actual_outcome) = x.split(' ')
         actual_outcome = 1 if actual_outcome == 'T' else 0
 
-        # target_address = convert_hex_to_bin(target_address)
         target_address = int(target_address)
 
         prediction = predictor.predict(target_address)

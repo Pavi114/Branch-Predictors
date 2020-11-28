@@ -14,22 +14,22 @@ Link to trace file: https://www.cis.upenn.edu/~milom/cis501-Fall08/homework/hw3/
 The outcome of the branch is determined at the compile stage.
 
 ### **Branch Always Taken**
-The branch instructions are predicted to be taken at the compile time.
+The branch instructions are predicted to be taken at the compile time. Accuracy of this method will depend on the percent branch taken in the code segment.
 
 ### **Branch Always Not Taken**
-The branch instructions are predicted to be not taken at the compile time.
+The branch instructions are predicted to be not taken at the compile time.Accuracy of this method will depend on the percent branch not taken in the code segment.
 
 ## **Dynamic Branch Prediction**
 In the case of dynamic branch prediction, the hardware measures the actual branch behavior by recording the recent history of each branch in a **branch prediction buffer**, assumes that the future behavior will continue the same way and make predictions.
 
-### **1-bit Predictor**
+### **1-Bit Predictor**
 - The Branch History Table (BHT) or Branch Prediction Buffer stores 1-bit values to indicate whether the branch is predicted to be taken / not taken. 
 - **Prediction**: The lower bits of the PC address (here ls_bits) index this table of 1-bit values and get the prediction. 
 - **Updation of Table**: If the prediction is wrong, the indexed position is updated with the actual outcome of the branch.
 
 ### **2-Bit Predictor**
 - Two bits are maintained in the prediction buffer and there are four different states namely, **Strongly Taken (11), Weakly Taken (10), Weakly Not-Taken (01) and, Strongly Not Taken (00)**. This predictor changes prediction only on two successive mispredictions (Strongly taken and weakly taken are interpreted as taken).
-- Table is initially as strongly not taken(00).
+- Table is initialized as strongly not taken(00).
 - **Prediction**: The lower bits of the PC address (here ls_bits) index this table of 2-bit values and get the prediction. 
 - **Updation of Table**:  Updation of the bits in the indexed position happens according to the state diagram:
 
@@ -39,7 +39,7 @@ In the case of dynamic branch prediction, the hardware measures the actual branc
 - When behavior of one branch is dependent on the behavior of other branches, they are said to be correlated.
 - Gshare uses a **m-bit** history register to record the taken/not-taken history of the last m branches.
 - Table is initially as strongly not taken(00).
-- **Prediction**: Gshare uses **xor** of the lowest m of the of the PC the history register as the index. Rest of the prediction happens similar to 2-bit predictor.
+- **Prediction**: Gshare uses **xor** of the lowest m bits of the of the PC and the history register as the index. Rest of the prediction happens similar to 2-bit predictor.
 - **Updation of table**: Updation of bits in the branch history table happens similar to the 2-bit predictor scheme. The branch history register is updated by shifting in the most recent conditional branch outcome into the low-order bits.
 
 ### **Correlation Predictor** 
@@ -66,12 +66,14 @@ In the case of dynamic branch prediction, the hardware measures the actual branc
 ## Implementation
 Python was used to implement the above branch predictors and analyse it's performance. A trace of **SPEC2000 INT benchmark**'s GCC comprising 16M instructions along with the output is stored in the ```./sample``` folder along with the IOs. 
 
-The distribution of taken and non-taken branches are given below.
+The distribution of taken and non-taken branches in the trace are given below.
 
 | Outcome   |   %  |
 |-----------|------|
 | Taken     | ~38% |
 | Not Taken | ~62% |
+
+Any implementation has two important parts: prediction and updation of branch history table. The former is done by calling the function ```predict(target_address)``` where target address is the address of the branch instruction and branch table is updated by calling the function ```update_bht(target_address, actual_outcome, predicted_outcome)```.
 
 
 ## **Analysis**
@@ -120,7 +122,7 @@ The distribution of taken and non-taken branches are given below.
   ![fig](./samples/16k.jpeg)
 
 ## **Observation and Inference**
-- The five schemes have accuracy / mis-prediction curves of similar shape for a given buffer size. The differences between their prediction accuracies are somewhat predictable. Since the performance of static predictor on a program is solely determined by the program's branch behavior, we can conclude that the branch behavior of a program is the most important parameter in determining the prediction accuracy of each scheme.
+- The five schemes have accuracy / mis-prediction curves of similar shape. The differences between their prediction accuracies are somewhat predictable. Since the performance of static predictor on a program is solely determined by the program's branch behavior, we can conclude that the branch behavior of a program is the most important parameter in determining the prediction accuracy of each scheme.
 - The effect of varying the buffer size over five dynamic schemes is given in the graph below. 
     - The curve for the bimodal (1-bit and 2-bit) schemes goes flat when the number of n-bit counters gets above about 6000.  Therefore, for the bimodal scheme, buffer size is not a limiting factor when it is more than 8K bits.
     - The common correlation scheme, GShare and Tournament scheme has noticeable improvement in performance with increased buffer size.

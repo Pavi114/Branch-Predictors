@@ -129,7 +129,7 @@ class CorrelationPredictor(Predictor):
         self.history_length = m
         self.num_counters = n
 
-        self.global_branch_history = 0 # m-bit register
+        self.global_branch_history = 0
         self.history_table = [
             [NOT_TAKEN for j in range(pow(2, n))] for i in range(pow(2, m))
         ]
@@ -138,7 +138,6 @@ class CorrelationPredictor(Predictor):
         self.m_sig_bits = pow(2, m) - 1
 
     def predict(self, target_address):
-        # lsb = int(target_address) & self.lsb
         h_index = self.global_branch_history & self.m_sig_bits
         t_index = target_address & self.n_sig_bits
 
@@ -150,7 +149,6 @@ class CorrelationPredictor(Predictor):
             return NOT_TAKEN
     
     def update_bht(self, target_address, actual_outcome, predicted_outcome):
-        # lsb = target_address & self.lsb
         h_index = self.global_branch_history & self.m_sig_bits
         t_index = target_address & self.n_sig_bits
 
@@ -199,7 +197,6 @@ class GSharePredictor(Predictor):
         print(s, end=" | ")
 
     def predict(self, target_address):
-        # lsb = int(target_address) & self.lsb
         index = (int(target_address) ^ self.global_branch_history) & self.n_sig_bits
 
         prediction = self.global_history_table[index]
@@ -210,7 +207,6 @@ class GSharePredictor(Predictor):
             return NOT_TAKEN
     
     def update_bht(self, target_address, actual_outcome, predicted_outcome):
-        # lsb = int(target_address) & self.lsb
         index = (int(target_address) ^ self.global_branch_history) & self.n_sig_bits
 
         prediction = self.global_history_table[index]
@@ -243,7 +239,6 @@ class TournamentPredictor(Predictor):
         self.chooser = [STRONGLY_BIMODAL for i in range(2**ls_bits)]
     
     def predict(self, target_address):
-        # lsb = int(target_address[-self.ls_bits:], 2)
         index = target_address & self.lsb
         if self.chooser[index] <= WEAKLY_BIMODAL:
             return self.two_bit.predict(target_address)
