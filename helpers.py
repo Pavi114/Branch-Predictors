@@ -4,15 +4,21 @@ def convert_hex_to_bin(hex):
     return bin(int(hex, scale))[2:].zfill(num_of_bits)
 
 def start_prediction(file_object, predictor):
+    i = 0
     while True:
         x = file_object.readline()
         x = x.rstrip()
+        # if i > 200:
+        #     break
         if not x:
             break
+        i = i + 1
+
         (target_address, actual_outcome) = x.split(' ')
         actual_outcome = 1 if actual_outcome == 'T' else 0
 
-        target_address = convert_hex_to_bin(target_address)
+        # target_address = convert_hex_to_bin(target_address)
+        target_address = int(target_address)
 
         prediction = predictor.predict(target_address)
 

@@ -20,9 +20,12 @@ class Predictor(object):
     
     def update_performance(self, expected_outcome, actual_outcome):
         if int(expected_outcome) != int(actual_outcome):
+            # print("Incorrect", end = " | ")
             self.increment_misprediction()
         else:
+            # print("Correct", end = " | ")
             self.increment_right_predictions()
+        # print(self.mispredictions)
     
     def print_performance_analysis(self):
         s = 'Number of Mispredictions: {}\n'.format(self.mispredictions)
@@ -59,19 +62,22 @@ class BranchNotTaken(Predictor):
 class OneBitPredictor(Predictor):
     def __init__(self, ls_bits):
         super(OneBitPredictor, self).__init__()
-        self.ls_bit_size = ls_bits
+        self.lsb = pow(2, ls_bits) - 1
+
         self.branch_history_table_size = 2**ls_bits
         self.branch_history_table = [0 for i in range(self.branch_history_table_size)]
     
     def predict(self, target_address):
-        lsb = int(target_address[-self.ls_bit_size:], 2)
-        if self.branch_history_table[int(lsb)]:
+        index = target_address & self.lsb
+
+        if self.branch_history_table[index]:
             return TAKEN
         return NOT_TAKEN
 
     def update_bht(self, target_address, actual_outcome, predicted_outcome):
-        lsb = int(target_address[-self.ls_bit_size:], 2)
-        self.branch_history_table[int(lsb)] = actual_outcome
+        index = target_address & self.lsb
+
+        self.branch_history_table[index] = actual_outcome
     
     def print_performance_analysis(self):
         s = 'Dynamic Branch Prediction: One level predictor using one bit\n'
@@ -81,25 +87,28 @@ class OneBitPredictor(Predictor):
 class TwoBitPredictor(Predictor):
     def __init__(self, ls_bits):
        super(TwoBitPredictor, self).__init__()
-       self.ls_bit_size = ls_bits
+       self.lsb = pow(2, ls_bits) - 1
+
        self.branch_history_table_size = 2**ls_bits
        self.branch_history_table = [0 for i in range(self.branch_history_table_size)] 
     
     def predict(self, target_address):
-        lsb = int(target_address[-self.ls_bit_size:], 2)        
-        prediction = self.branch_history_table[int(lsb)]
+        index = target_address & self.lsb
+
+        prediction = self.branch_history_table[index]
         if prediction == STRONGLY_TAKEN or prediction == WEAKLY_TAKEN:
             return TAKEN
         if prediction == STRONGLY_NOT_TAKEN or prediction == WEAKLY_NOT_TAKEN:
             return NOT_TAKEN
     
     def update_bht(self, target_address, actual_outcome, predicted_outcome):
-        lsb = int(target_address[-self.ls_bit_size:], 2)
-        if actual_outcome == TAKEN:
-            if predicted_outcome == NOT_TAKEN or self.branch_history_table[lsb] == WEAKLY_TAKEN:
-                self.branch_history_table[lsb] = (self.branch_history_table[lsb] + 1) % 4
-        elif predicted_outcome == TAKEN or self.branch_history_table[lsb] == WEAKLY_NOT_TAKEN:
-            self.branch_history_table[lsb] = (self.branch_history_table[lsb] - 1) % 4
+        index = target_address & self.lsb
+
+        prediction = self.branch_history_table[index]
+        if actual_outcome == TAKEN and prediction != STRONGLY_TAKEN:
+            self.branch_history_table[index] += 1
+        elif actual_outcome == NOT_TAKEN and prediction != STRONGLY_NOT_TAKEN:
+            self.branch_history_table[index] -= 1
     
     def print_performance_analysis(self):
         s = 'Dynamic Branch Prediction: Two Bit\n'
@@ -111,28 +120,50 @@ class TwoBitPredictor(Predictor):
 class GSharePredictor(Predictor):
     def __init__(self, m, n):
         super(GSharePredictor, self).__init__()
-        self.m = m
-        self.n = n
-        self.max_val = pow(2, n)
+        self.history_length = m
+        self.num_counters = n
         self.global_branch_history = 0 #m-bit register
-        self.global_history_table = [0 for i in range(pow(2, self.m))] # n bit each in 2^m entries
+        self.global_history_table = [NOT_TAKEN for i in range(pow(2, n))] # 2 bit each in 2^n entries
+        self.n_sig_bits = pow(2, n) - 1
+        self.m_sig_bits = pow(2, m) - 1
+
+    def print_table_state(self):
+        s = ''
+        for t in self.global_history_table:
+            if t == STRONGLY_TAKEN:
+                s += 'T'
+            elif t == WEAKLY_TAKEN:
+                s += 't'
+            elif t == WEAKLY_NOT_TAKEN:
+                s += 'n'
+            else:
+                s += 'N'
+        print(s, end=" | ")
 
     def predict(self, target_address):
-        lsb = int(target_address[-self.m:], 2)
-        index = lsb ^ self.global_branch_history
-        if self.global_history_table[index] >= self.max_val / 2:
-           return TAKEN
-        return NOT_TAKEN
+        # lsb = int(target_address) & self.lsb
+        index = (int(target_address) ^ self.global_branch_history) & self.n_sig_bits
+
+        prediction = self.global_history_table[index]
+
+        if prediction == STRONGLY_TAKEN or prediction == WEAKLY_TAKEN:
+            return TAKEN
+        elif prediction == STRONGLY_NOT_TAKEN or prediction == WEAKLY_NOT_TAKEN:
+            return NOT_TAKEN
     
     def update_bht(self, target_address, actual_outcome, predicted_outcome):
-        lsb = int(target_address[-self.m:], 2)
-        index = lsb ^ self.global_branch_history
-        if actual_outcome == TAKEN and self.global_history_table[index] < self.max_val - 1:
+        # lsb = int(target_address) & self.lsb
+        index = (int(target_address) ^ self.global_branch_history) & self.n_sig_bits
+
+        prediction = self.global_history_table[index]
+
+        if actual_outcome == TAKEN and prediction != STRONGLY_TAKEN:
             self.global_history_table[index] += 1
-        elif actual_outcome == NOT_TAKEN and self.global_history_table[index] > 0:
+        elif actual_outcome == NOT_TAKEN and prediction != STRONGLY_NOT_TAKEN:
             self.global_history_table[index] -= 1
+
         self.global_branch_history = (self.global_branch_history << 1) | actual_outcome
-        self.global_branch_history = self.global_branch_history & self.max_val
+        self.global_branch_history = self.global_branch_history & self.m_sig_bits
     
     def print_performance_analysis(self):
         s = 'Dynamic Branch Prediction: Two Level Correlating Predictor (GShare)\n'
