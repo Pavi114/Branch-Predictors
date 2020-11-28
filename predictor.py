@@ -20,17 +20,14 @@ class Predictor(object):
     
     def update_performance(self, expected_outcome, actual_outcome):
         if int(expected_outcome) != int(actual_outcome):
-            # print("Incorrect", end = " | ")
             self.increment_misprediction()
         else:
-            # print("Correct", end = " | ")
             self.increment_right_predictions()
-        # print(self.mispredictions)
     
     def print_performance_analysis(self):
-        s = 'Number of Mispredictions: {}\n'.format(self.mispredictions)
-        s += 'Number of Correct Predictions: {}\n'.format(self.right_predictions)
-        s += 'Accuracy: {}\n'.format(round(self.accuracy, 2))
+        s = '\tNumber of Mispredictions: {}\n'.format(self.mispredictions)
+        s += '\tNumber of Correct Predictions: {}\n'.format(self.right_predictions)
+        s += '\tAccuracy: {}%\n'.format(round(self.accuracy, 2))
         return s
 
 class BranchTaken(Predictor):
@@ -167,5 +164,41 @@ class GSharePredictor(Predictor):
     
     def print_performance_analysis(self):
         s = 'Dynamic Branch Prediction: Two Level Correlating Predictor (GShare)\n'
+        s += Predictor.print_performance_analysis(self)
+        print(s)
+    
+class TournamentPredictor(Predictor):
+    def __init__(self, m, n, ls_bits):
+        super(TournamentPredictor, self).__init__()
+        self.ls_bits = ls_bits
+        self.lsb = 2**ls_bits - 1
+        self.gshare = GSharePredictor(m, n)
+        self.two_bit = TwoBitPredictor(m)
+        self.chooser = [STRONGLY_BIMODAL for i in range(2**ls_bits)]
+    
+    def predict(self, target_address):
+        # lsb = int(target_address[-self.ls_bits:], 2)
+        index = target_address & self.lsb
+        if self.chooser[index] <= WEAKLY_BIMODAL:
+            return self.two_bit.predict(target_address)
+        else:
+            return self.gshare.predict(target_address)
+    
+    def update_bht(self, target_address, actual_outcome, predicted_outcome):
+        gshare_predict = self.gshare.predict(target_address)
+        two_bit_predict = self.two_bit.predict(target_address)
+        index = target_address & self.lsb
+        self.gshare.update_bht(target_address, actual_outcome, gshare_predict)
+        self.two_bit.update_bht(target_address, actual_outcome, two_bit_predict)
+        if gshare_predict == two_bit_predict:
+            return
+        if gshare_predict == actual_outcome and self.chooser[index] != 3:
+            self.chooser[index] += 1
+            return
+        if two_bit_predict == actual_outcome and self.chooser[index] != 0:
+            self.chooser[index] -= 1
+
+    def print_performance_analysis(self):
+        s = 'Dynamic Branch Prediction: Tournament Predictor\n'
         s += Predictor.print_performance_analysis(self)
         print(s)
