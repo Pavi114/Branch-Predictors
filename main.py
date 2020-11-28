@@ -1,6 +1,8 @@
 from predictor import *
 from helpers import start_prediction
 
+import sys
+
 predictor_types = {
     'BranchTaken': BranchTaken(),
     'BranchNotTaken': BranchNotTaken(), 
@@ -12,6 +14,6 @@ predictor_types = {
 }
 
 for predictor_type, predictor in predictor_types.items():
-    with open('./data/branch-trace-gcc.trace', 'r') as f:
+    with open(sys.argv[1], 'r') as f:
         start_prediction(file_object=f, predictor=predictor)
         predictor.print_performance_analysis()
