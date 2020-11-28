@@ -24,7 +24,8 @@ In the case of dynamic branch prediction, the hardware measures the actual branc
 - Table is initially as strongly not taken(00).
 - **Prediction**: The lower bits of the PC address (here ls_bits) index this table of 2-bit values and get the prediction. 
 - **Updation of Table**:  Updation of the bits in the indexed position happens according to the state diagram:
-        ![img](2bit.png)
+
+    ![2 Bit Predictor](./images/2bit.png)
 
 ### GShare Predictor (GShare)
 - When behavior of one branch is dependent on the behavior of other branches, they are said to be correlated.
@@ -55,7 +56,7 @@ In the case of dynamic branch prediction, the hardware measures the actual branc
     - If the two predictors made different predictions (thus, one of the predictors was correct and the other incorrect) the chooser counter is updated (incremented or decremented by one) toward preferring that of the predictor that was correct.
 
 ## Implementation
-Python was used to implement the above branch predictors and analyse it's performance. A trace of spec95 gcc int benchmark comprising 16M instructions along with the output is stored in the ```./sample``` folder along with the IOs. 
+Python was used to implement the above branch predictors and analyse it's performance. A trace of **SPEC2000 INT benchmark**'s GCC comprising 16M instructions along with the output is stored in the ```./sample``` folder along with the IOs. 
 
 | Outcome   |   %  |
 |-----------|------|
@@ -97,9 +98,9 @@ Python was used to implement the above branch predictors and analyse it's perfor
     - The curve for the bimodal (1-bit and 2-bit) schemes goes flat when the number of n-bit counters gets above about 6000.  Therefore, for the bimodal scheme, buffer size is not a limiting factor when it is more than 8K bits.
     - The common correlation scheme, GShare and Tournament scheme has noticeable improvement in performance with increased buffer size.
 
-    ![fig](./samples/size-vs-accuracy.png)  
+    ![Accuracy vs Size](./samples/size-vs-accuracy.png)  
     
-    ![fig](./samples/size-vs-misrate.png)
+    ![Misrate vs Size](./samples/size-vs-misrate.png)
 
 ## Conclusion
 Different Branch Prediction algorithms were simulated and their performance and accuracy was analysed at different size intervals with respect to each other.
